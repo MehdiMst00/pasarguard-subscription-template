@@ -1,64 +1,69 @@
-# PasarGuard Template
+# Client-Only PasarGuard Template
 
-A modern, responsive user dashboard template for PasarGuard with multi-language support (English, Persian, Chinese, Russian).
+This repository is a fork of the [PasarGuard Subscription Template](https://github.com/PasarGuard/subscription-template) 
+.
+It can be deployed on a PHP server to proxy PasarGuard subscription requests and host the PasarGuard User Dashboard (React UI).
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/PasarGuard/subscription-template/refs/heads/main/screenshots/en.png" alt="English UI" width="40%">
-  <img src="https://raw.githubusercontent.com/PasarGuard/subscription-template/refs/heads/main/screenshots/fa.png" alt="Persian UI" width="30%">
-</p>
+<p align="center"> <img src="https://raw.githubusercontent.com/PasarGuard/subscription-template/refs/heads/main/screenshots/en.png" alt="English UI" width="40%"> <img src="https://raw.githubusercontent.com/PasarGuard/subscription-template/refs/heads/main/screenshots/fa.png" alt="Persian UI" width="30%"> </p>
 
-Built with React + TypeScript + Vite, featuring real-time data updates, QR code generation, and beautiful UI components.
-
-## ✨ Features
-
-- 🌍 Multi-language support (EN, FA, ZH, RU) - users can change language in the UI
-- 📱 Fully responsive design
-- 🎨 Modern UI with dark mode support
-- 🔄 Real-time data updates (10s interval)
-- 📊 Traffic usage charts
-- 🔗 QR code generation for connection links
-- 📋 One-click copy to clipboard
-- ⚡ Fast and lightweight
-
----
 
 ## 📦 Installation
 
-**1. Download the template**
+**1. `.htaccess`**
 
-Each release includes language-prefixed fallback versions. The default version uses Persian (fa) as the fallback language. Users can change their language in the UI, but you can set a different fallback:
+```
+RewriteEngine On
 
-```sh
-# Download default version (Persian fallback)
-sudo wget -N -O /var/lib/pasarguard/templates/subscription/index.html https://github.com/PasarGuard/subscription-template/releases/latest/download/index.html
+# 1. Remove Trailing Slash (New Rule)
+# If request ends with /, redirect to version without /. 
+# Condition !-d ensures we don't break physical directories.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ /$1 [L,R=301]
 
-# Or download a specific fallback language (en, fa, zh, ru)
-sudo wget -N -O /var/lib/pasarguard/templates/subscription/index.html https://github.com/PasarGuard/subscription-template/releases/latest/download/en.html
+# 2. Serve Real Files Directly
+# If the request matches a real file (React assets, images), serve it.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 3. Route Everything Else to index.php
+# This handles React routes (clean URLs) and Proxy requests.
+RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
 ```
 
-**2. Configure PasarGuard**
+**2. Download `index.php`**
 
-```sh
-echo 'CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"' | sudo tee -a /opt/pasarguard/.env
-echo 'SUBSCRIPTION_PAGE_TEMPLATE="subscription/index.html"' | sudo tee -a /opt/pasarguard/.env
+Download [index.php](https://raw.githubusercontent.com/MehdiMst00/pasarguard-subscription-template/refs/heads/main/deploy/index.php)
+
+Then update the PasarGuard subscription domain:
+
+```php
+// Change this
+$host_domain = "sub.replace-with-your-pasarguard-domain.com";
 ```
 
-Or manually edit `/opt/pasarguard/.env` and uncomment:
-```
-CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"
-SUBSCRIPTION_PAGE_TEMPLATE="subscription/index.html"
-```
+**3. Download React `index.html`**
 
-**3. Restart PasarGuard**
+Download the React User Dashboard UI:
+[index.html](https://raw.githubusercontent.com/MehdiMst00/pasarguard-subscription-template/refs/heads/main/deploy/index.html) 
 
-```sh
-pasarguard restart
+Place it in the same directory as index.php.
+
+## 📁 Folder Structure
+
+```
+/
+├── .htaccess
+├── index.php # PHP proxy entry point
+├── index.html # React user dashboard
 ```
 
 ---
 
-## 📖 Other Languages
+## 🔒 Security Note
+This setup hides your main PasarGuard subscription domain behind a proxy,
+reducing direct exposure of your backend endpoint.
 
-- [فارسی (Persian)](README.fa.md)
-- [中文 (Chinese)](README.zh.md)
-- [Русский (Russian)](README.ru.md)
+## ✅ Requirements
+- PHP 8.0+
+- Apache
