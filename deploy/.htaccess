@@ -1,0 +1,17 @@
+RewriteEngine On
+
+# 1. Remove Trailing Slash (New Rule)
+# If request ends with /, redirect to version without /. 
+# Condition !-d ensures we don't break physical directories.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+# 2. Serve Real Files Directly
+# If the request matches a real file (React assets, images), serve it.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 3. Route Everything Else to index.php
+# This handles React routes (clean URLs) and Proxy requests.
+RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
